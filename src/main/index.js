@@ -12,8 +12,11 @@ let currentUser = null; // 登录会话（主进程持有）
 
 const isDev = !app.isPackaged;
 
-/** 数据目录：生产 → userData；开发 → 项目根 data */
+/** 数据目录：portable 版 → 程序所在目录/data（绿色免安装）；生产 → userData；开发 → 项目根 data */
 function dataDir() {
+  if (process.env.PORTABLE_EXECUTABLE_DIR) {
+    return path.join(process.env.PORTABLE_EXECUTABLE_DIR, "data");
+  }
   if (isDev) {
     return path.join(__dirname, "..", "..", "data");
   }
@@ -148,7 +151,16 @@ function registerIpc() {
 /* ================= 生命周期 ================= */
 
 app.whenReady().then(() => {
-  db.initDatabase(dataDir());
+  // portable 版若放在只读目录，自动回退到用户数据目录
+  let dir = dataDir();
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, ".write_test"), "1");
+    fs.rmSync(path.join(dir, ".write_test"));
+  } catch (_) {
+    dir = path.join(app.getPath("userData"), "data");
+  }
+  db.initDatabase(dir);
   registerIpc();
   createWindow();
 
