@@ -24,7 +24,7 @@ jobs:
         run: npm run build:vite
 
       - name: 编译 Windows EXE（electron-builder）
-        run: npm run dist
+        run: npm run dist -- --publish never
 
       - name: 上传 EXE 产物
         uses: actions/upload-artifact@v4
