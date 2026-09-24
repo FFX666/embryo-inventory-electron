@@ -31,7 +31,6 @@
   "build": {
     "appId": "com.doubao.embryoinventory",
     "productName": "胚胎实验室库存管理",
-    "publish": "never",
     "directories": {
       "output": "dist"
     },
