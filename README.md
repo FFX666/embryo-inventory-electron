@@ -54,7 +54,10 @@ npm run start        # 另开终端启动 Electron（加载 dev server）
 仓库内置 `.github/workflows/build-exe.yml`：推送到 GitHub 后自动在
 Windows runner 上执行 `npm install` → `npm run build:vite` →
 `npm run dist`（electron-builder 编译，自动 rebuild better-sqlite3 原生模块），
-产物为 NSIS 安装包（`dist/*.exe`）。
+每次构建产出 **两个 exe**：
+
+- **安装版**：`胚胎实验室库存管理 Setup 1.0.0.exe`（NSIS，可自选安装目录、创建桌面快捷方式）
+- **绿色版**：`胚胎实验室库存管理-portable-1.0.0.exe`（免安装双击即用；数据保存在程序所在目录的 `data/` 文件夹，复制整个文件夹即可整体迁移）
 
 三步获取：
 
