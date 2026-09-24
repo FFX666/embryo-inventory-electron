@@ -1,0 +1,41 @@
+name: 构建 Windows EXE (Electron)
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 安装依赖
+        run: npm install
+
+      - name: 构建 Vue 渲染进程
+        run: npm run build:vite
+
+      - name: 编译 Windows EXE（electron-builder）
+        run: npm run dist
+
+      - name: 上传 EXE 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: 胚胎实验室库存管理-exe
+          path: dist/*.exe
+          if-no-files-found: error
+
+      - name: 发布到 GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe
+          generate_release_notes: true
