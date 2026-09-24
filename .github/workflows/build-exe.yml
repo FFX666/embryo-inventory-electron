@@ -5,6 +5,10 @@ on:
     types: [published]
   workflow_dispatch:
 
+# 发布 Release 需要写权限（生成发布说明、上传 exe 资产）
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
