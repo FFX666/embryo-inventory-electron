@@ -43,7 +43,8 @@
     ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
       ]
     },
     "nsis": {
@@ -51,6 +52,10 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "shortcutName": "胚胎实验室库存管理"
+    },
+    "portable": {
+      "artifactName": "${productName}-portable-${version}.exe",
+      "requestExecutionLevel": "user"
     },
     "npmRebuild": true,
     "electronDownload": {
