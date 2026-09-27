@@ -1,17 +1,21 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 
 const rows = ref([]);
-const dialog = ref(false);
-const editingId = ref(null);
-const form = ref({});
 const options = ref({ 分类: [], 储存条件: [], 货架: [] });
 const isViewer = ref(false);
 const current = ref(null);
+const editingId = ref(null);
+const form = ref(emptyForm());
 
-const formRef = ref();
-const rules = { name: [{ required: true, message: "请填写名称", trigger: "blur" }] };
+function emptyForm() {
+  return {
+    code: "", name: "", spec: "", manufacturer: "", brand: "", batch_no: "", expiry_date: "",
+    category: "", storage_condition: "", unit: "瓶", purchase_price: 0,
+    warning_qty: 0, shelf_no: "", remark: "", sort_no: 0, enabled: true, init_qty: 0,
+  };
+}
 
 onMounted(async () => {
   current.value = await window.api.auth.current();
@@ -26,29 +30,52 @@ async function load() {
   for (const o of opts) (options.value[o.type] || (options.value[o.type] = [])).push(o.value);
 }
 
-function openAdd() {
+function resetForm() {
   editingId.value = null;
-  form.value = { name: "", code: "", spec: "", manufacturer: "", brand: "", category: "", storage_condition: "", unit: "瓶", purchase_price: 0, warning_qty: 0, shelf_no: "", sort_no: 0 };
-  dialog.value = true;
+  form.value = emptyForm();
 }
 
-function openEdit(row) {
-  editingId.value = row.id;
-  form.value = { ...row };
-  dialog.value = true;
+function onClickAdd() {
+  resetForm();
 }
 
-async function save() {
-  await formRef.value.validate();
+async function onSave() {
+  if (!form.value.name) { ElMessage.warning("请填写耗材名称"); return; }
   const r = await window.api.materials.save({ ...form.value, id: editingId.value });
-  if (r.ok) { ElMessage.success("已保存"); dialog.value = false; load(); }
-  else ElMessage.error(r.msg);
+  if (r.ok) {
+    ElMessage.success(editingId.value ? "已修改" : "已保存货品");
+    resetForm();
+    load();
+  } else ElMessage.error(r.msg);
 }
 
-async function toggle(row) {
+function onEdit(row) {
+  editingId.value = row.id;
+  form.value = {
+    code: row.code || "", name: row.name, spec: row.spec || "", manufacturer: row.manufacturer || "",
+    brand: row.brand || "", batch_no: "", expiry_date: "", category: row.category || "",
+    storage_condition: row.storage_condition || "", unit: row.unit || "瓶", purchase_price: row.purchase_price || 0,
+    warning_qty: row.warning_qty || 0, shelf_no: row.shelf_no || "", remark: "", sort_no: row.sort_no || 0,
+    enabled: !!row.enabled, init_qty: 0,
+  };
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function onToggle(row) {
+  await ElMessageBox.confirm(`确定要${row.enabled ? "停用" : "启用"}「${row.name}」吗？`, "确认", { type: "warning" });
   const r = await window.api.materials.toggle(row.id);
-  if (r.ok) load();
-  else ElMessage.error(r.msg);
+  if (r.ok) load(); else ElMessage.error(r.msg);
+}
+
+const selected = ref([]);
+async function onToggleSelected() {
+  if (!selected.value.length) { ElMessage.warning("请先在表格里勾选要停用的行"); return; }
+  await ElMessageBox.confirm(`将停用选中的 ${selected.value.length} 个耗材，确认？`, "确认", { type: "warning" });
+  for (const row of selected.value) {
+    if (row.enabled) await window.api.materials.toggle(row.id);
+  }
+  ElMessage.success("已停用选中项");
+  load();
 }
 
 function openBarcode(row) {
@@ -78,77 +105,131 @@ const shown = computed(() => rows.value);
 <template>
   <div>
     <div class="card">
-      <div class="card-title">耗材档案</div>
-      <div class="toolbar">
-        <el-button v-if="!isViewer" class="green-btn" type="primary" @click="openAdd">新增档案</el-button>
+      <div class="card-title">基础档案</div>
+      <div class="sub-title">耗材基础档案录入</div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>条形码/材料编号</label>
+          <el-input v-model="form.code" placeholder="扫码或手动输入" />
+        </div>
+        <div class="field">
+          <label>耗材名称 <span class="req">*</span></label>
+          <el-input v-model="form.name" placeholder="如：卵裂胚培养液" />
+        </div>
+        <div class="field">
+          <label>规格型号</label>
+          <el-input v-model="form.spec" />
+        </div>
+        <div class="field">
+          <label>生产厂家</label>
+          <el-input v-model="form.manufacturer" />
+        </div>
+        <div class="field">
+          <label>品牌</label>
+          <el-input v-model="form.brand" />
+        </div>
+        <div class="field">
+          <label>批号（期初）</label>
+          <el-input v-model="form.batch_no" placeholder="期初库存批号" />
+        </div>
+        <div class="field">
+          <label>有效期（期初）</label>
+          <el-date-picker v-model="form.expiry_date" type="date" value-format="YYYY-MM-DD" style="width:100%" />
+        </div>
+        <div class="field">
+          <label>期初数量</label>
+          <el-input-number v-model="form.init_qty" :min="0" style="width:100%" />
+        </div>
+
+        <div class="field">
+          <label>分类</label>
+          <el-select v-model="form.category" filterable allow-create style="width:100%">
+            <el-option v-for="v in options['分类']" :key="v" :value="v" />
+          </el-select>
+        </div>
+        <div class="field">
+          <label>储存条件</label>
+          <el-select v-model="form.storage_condition" filterable allow-create style="width:100%">
+            <el-option v-for="v in options['储存条件']" :key="v" :value="v" />
+          </el-select>
+        </div>
+        <div class="field">
+          <label>单位</label>
+          <el-input v-model="form.unit" />
+        </div>
+        <div class="field">
+          <label>采购单价</label>
+          <el-input-number v-model="form.purchase_price" :min="0" :precision="2" style="width:100%" />
+        </div>
+        <div class="field">
+          <label>库存预警最低数量</label>
+          <el-input-number v-model="form.warning_qty" :min="0" style="width:100%" />
+        </div>
+        <div class="field">
+          <label>存放货架编号</label>
+          <el-select v-model="form.shelf_no" filterable allow-create style="width:100%">
+            <el-option v-for="v in options['货架']" :key="v" :value="v" />
+          </el-select>
+        </div>
+        <div class="field">
+          <label>备注</label>
+          <el-input v-model="form.remark" />
+        </div>
+        <div class="field">
+          <label>排序号</label>
+          <el-input-number v-model="form.sort_no" :min="0" style="width:100%" />
+        </div>
       </div>
+
+      <div class="form-bottom">
+        <el-checkbox v-model="form.enabled">启用</el-checkbox>
+        <div class="btn-group">
+          <el-button v-if="!isViewer" class="green-btn" @click="onClickAdd">新增</el-button>
+          <el-button v-if="!isViewer" class="green-btn" type="primary" @click="onSave">
+            {{ editingId ? "保存修改" : "保存货品" }}
+          </el-button>
+          <el-button @click="resetForm">清空</el-button>
+          <el-button v-if="!isViewer" type="warning" @click="onToggleSelected">停用选中</el-button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">档案列表</div>
       <div class="table-wrap">
-        <el-table :data="shown" size="small" height="500">
-          <el-table-column prop="code" label="编号" width="100" />
-          <el-table-column prop="name" label="名称" min-width="160" />
+        <el-table :data="shown" size="small" height="460" @selection-change="(v) => selected = v">
+          <el-table-column type="selection" width="40" />
+          <el-table-column prop="name" label="耗材名称" min-width="180" />
           <el-table-column prop="spec" label="规格型号" width="110" />
-          <el-table-column prop="manufacturer" label="厂家" width="120" />
+          <el-table-column prop="manufacturer" label="生产厂家" width="120" />
           <el-table-column prop="brand" label="品牌" width="100" />
-          <el-table-column prop="category" label="分类" width="90" />
-          <el-table-column prop="storage_condition" label="储存条件" width="90" />
+          <el-table-column prop="category" label="分类" width="100" />
           <el-table-column prop="unit" label="单位" width="70" />
+          <el-table-column prop="purchase_price" label="采购单价" width="90" />
+          <el-table-column prop="warning_qty" label="预警数量" width="90" />
           <el-table-column prop="stock_qty" label="当前库存" width="90" />
-          <el-table-column prop="shelf_no" label="货架" width="90" />
-          <el-table-column label="状态" width="80">
+          <el-table-column prop="shelf_no" label="货架号" width="90" />
+          <el-table-column label="操作" width="220" fixed="right">
             <template #default="{ row }">
-              <el-tag :type="row.enabled ? 'success' : 'info'" size="small">{{ row.enabled ? "启用" : "停用" }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="200" fixed="right">
-            <template #default="{ row }">
-              <el-button size="small" text @click="openEdit(row)">修改</el-button>
               <el-button size="small" text @click="openBarcode(row)">条码</el-button>
-              <el-button v-if="!isViewer" size="small" text type="danger" @click="toggle(row)">{{ row.enabled ? "停用" : "启用" }}</el-button>
+              <el-button size="small" text type="primary" @click="onEdit(row)">修改</el-button>
+              <el-button v-if="!isViewer" size="small" text :type="row.enabled ? 'danger' : 'success'" @click="onToggle(row)">
+                {{ row.enabled ? "停用" : "启用" }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
     </div>
-
-    <el-dialog v-model="dialog" :title="editingId ? '修改档案' : '新增档案'" width="640px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
-        <el-row :gutter="12">
-          <el-col :span="12"><el-form-item label="编号"><el-input v-model="form.code" placeholder="条码/编号" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="名称" prop="name"><el-input v-model="form.name" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="规格型号"><el-input v-model="form.spec" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="生产厂家"><el-input v-model="form.manufacturer" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="品牌"><el-input v-model="form.brand" /></el-form-item></el-col>
-          <el-col :span="12">
-            <el-form-item label="分类">
-              <el-select v-model="form.category" filterable allow-create clearable style="width:100%">
-                <el-option v-for="v in options['分类']" :key="v" :value="v" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="储存条件">
-              <el-select v-model="form.storage_condition" filterable allow-create clearable style="width:100%">
-                <el-option v-for="v in options['储存条件']" :key="v" :value="v" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12"><el-form-item label="单位"><el-input v-model="form.unit" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="单价"><el-input-number v-model="form.purchase_price" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="预警数量"><el-input-number v-model="form.warning_qty" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="12">
-            <el-form-item label="货架位置">
-              <el-select v-model="form.shelf_no" filterable allow-create clearable style="width:100%">
-                <el-option v-for="v in options['货架']" :key="v" :value="v" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12"><el-form-item label="排序号"><el-input-number v-model="form.sort_no" style="width:100%" /></el-form-item></el-col>
-        </el-row>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialog = false">取消</el-button>
-        <el-button class="green-btn" type="primary" @click="save">保存</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
+
+<style scoped>
+.sub-title { font-size: 13px; color: #5d7f6a; margin: -6px 0 14px; }
+.form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 14px; margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; color: #3f6b52; margin-bottom: 4px; }
+.field .req { color: #c0392b; }
+.form-bottom { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e2efe7; padding-top: 12px; }
+.btn-group { display: flex; gap: 8px; }
+</style>

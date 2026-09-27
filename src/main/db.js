@@ -377,13 +377,28 @@ function saveMaterial(user, payload) {
     ).run(code || "", name, spec || "", manufacturer || "", brand || "", category || "", storage_condition || "", unit || "瓶",
       Number(purchase_price) || 0, Number(warning_qty) || 0, shelf_no || "", Number(sort_no) || 0, id);
     log(user, "基础档案", "修改", `Material ${id}`, name);
-  } else {
+    return { ok: true };
+  }
+  // 新增档案：若填了批号/有效期/期初数量，同时建一笔期初库存批次
+  const tx = db.transaction(() => {
     const r = db.prepare(
       `INSERT INTO materials (code, name, spec, manufacturer, brand, category, storage_condition, unit, purchase_price, warning_qty, shelf_no, sort_no, enabled) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1)`
     ).run(code || "", name, spec || "", manufacturer || "", brand || "", category || "", storage_condition || "", unit || "瓶",
       Number(purchase_price) || 0, Number(warning_qty) || 0, shelf_no || "", Number(sort_no) || 0);
-    log(user, "基础档案", "新增", `Material ${r.lastInsertRowid}`, name);
-  }
+    const newId = r.lastInsertRowid;
+    log(user, "基础档案", "新增", `Material ${newId}`, name);
+    const initQty = Number(p.init_qty) || 0;
+    if (initQty > 0 && p.batch_no) {
+      db.prepare(
+        "INSERT INTO stock_batches (material_id, batch_no, expiry_date, qty, unit, location, created_at) VALUES (?,?,?,?,?,?,?)"
+      ).run(newId, p.batch_no, p.expiry_date || "", initQty, unit || "瓶", shelf_no || "", now());
+      db.prepare(
+        "INSERT INTO inbound_records (material_id, material_name, batch_no, expiry_date, qty, unit, supplier, handler, date, status, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+      ).run(newId, name, p.batch_no, p.expiry_date || "", initQty, unit || "瓶", "期初库存", user.display_name, today(), "正常", now());
+      log(user, "入库管理", "期初", `Material ${newId}`, `${name} 期初批次:${p.batch_no} 数量:${initQty}`);
+    }
+  });
+  tx();
   return { ok: true };
 }
 
