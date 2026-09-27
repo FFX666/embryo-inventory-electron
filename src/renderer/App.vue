@@ -1,10 +1,19 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
 const user = ref(null);
+
+// 登录/退出后路由会变化，监听路由切换刷新当前用户（侧边菜单才能正确渲染）
+watch(
+  () => route.path,
+  async () => {
+    user.value = await window.api.auth.current();
+  },
+  { immediate: true }
+);
 
 const menus = computed(() => {
   if (!user.value) return [];
@@ -28,10 +37,6 @@ const menus = computed(() => {
   base.push({ path: "/logs", title: "操作日志" });
   if (role === "admin") base.push({ path: "/settings", title: "系统设置" });
   return base;
-});
-
-onMounted(async () => {
-  user.value = await window.api.auth.current();
 });
 
 async function logout() {
