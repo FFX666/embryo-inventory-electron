@@ -88,6 +88,43 @@ function registerIpc() {
   ipcMain.handle("inbound:list", () => db.listInbound());
   ipcMain.handle("inbound:add", (e, p) => db.addInbound(currentUser, p));
   ipcMain.handle("inbound:void", (e, id) => db.voidInbound(currentUser, id));
+  ipcMain.handle("inbound:importExcel", async () => {
+    if (!currentUser) return { ok: false, msg: "未登录" };
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: "选择入库 Excel 文件",
+      filters: [{ name: "Excel", extensions: ["xlsx", "xls"] }],
+      properties: ["openFile"],
+    });
+    if (canceled || !filePaths || !filePaths.length) return { ok: false, msg: "已取消" };
+    try {
+      const XLSX = require("xlsx");
+      const wb = XLSX.readFile(filePaths[0]);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      const materials = db.listMaterials(true);
+      let okCount = 0;
+      const errors = [];
+      rows.forEach((row, idx) => {
+        const name = String(row["耗材名称"] || row["名称"] || "").trim();
+        const m = materials.find((x) => x.name === name);
+        if (!m) { errors.push(`第${idx + 2}行：未找到耗材"${name}"`); return; }
+        const r = db.addInbound(currentUser, {
+          material_id: m.id,
+          batch_no: String(row["批号"] || "").trim(),
+          expiry_date: row["有效期"] ? String(row["有效期"]).slice(0, 10) : "",
+          qty: Number(row["数量"]) || 0,
+          unit: row["单位"] || m.unit,
+          supplier: String(row["供应商"] || "").trim(),
+          handler: String(row["经手人"] || currentUser.display_name),
+        });
+        if (r.ok) okCount++;
+        else errors.push(`第${idx + 2}行：${r.msg}`);
+      });
+      return { ok: true, imported: okCount, errors };
+    } catch (err) {
+      return { ok: false, msg: "导入失败：" + err.message };
+    }
+  });
 
   // 出库
   ipcMain.handle("outbound:list", () => db.listOutbound());
