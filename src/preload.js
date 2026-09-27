@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld("api", {
     list: () => ipcRenderer.invoke("inbound:list"),
     add: (p) => ipcRenderer.invoke("inbound:add", p),
     void: (id) => ipcRenderer.invoke("inbound:void", id),
+    importExcel: () => ipcRenderer.invoke("inbound:importExcel"),
   },
   outbound: {
     list: () => ipcRenderer.invoke("outbound:list"),
