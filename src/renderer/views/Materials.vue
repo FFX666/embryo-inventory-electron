@@ -30,6 +30,28 @@ async function load() {
   for (const o of opts) (options.value[o.type] || (options.value[o.type] = [])).push(o.value);
 }
 
+// 新增下拉选项
+async function addOption(type) {
+  try {
+    const { value } = await ElMessageBox.prompt(`请输入新的${type}选项`, "新增选项", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      inputPattern: /\S+/,
+      inputErrorMessage: "内容不能为空",
+    });
+    if (!value) return;
+    const list = options.value[type] || [];
+    if (list.includes(value.trim())) {
+      ElMessage.warning("该选项已存在");
+      return;
+    }
+    await window.api.options.save(type, [...list, value.trim()]);
+    options.value[type] = [...list, value.trim()];
+    form.value[type === "货架" ? "shelf_no" : type === "储存条件" ? "storage_condition" : "category"] = value.trim();
+    ElMessage.success("已添加");
+  } catch (e) { /* 取消 */ }
+}
+
 function resetForm() {
   editingId.value = null;
   form.value = emptyForm();
@@ -111,11 +133,11 @@ const shown = computed(() => rows.value);
       <div class="form-grid">
         <div class="field">
           <label>条形码/材料编号</label>
-          <el-input v-model="form.code" placeholder="扫码或手动输入" />
+          <el-input v-model="form.code" />
         </div>
         <div class="field">
           <label>耗材名称 <span class="req">*</span></label>
-          <el-input v-model="form.name" placeholder="如：卵裂胚培养液" />
+          <el-input v-model="form.name" />
         </div>
         <div class="field">
           <label>规格型号</label>
@@ -126,37 +148,35 @@ const shown = computed(() => rows.value);
           <el-input v-model="form.manufacturer" />
         </div>
         <div class="field">
-          <label>品牌</label>
-          <el-input v-model="form.brand" />
+          <label>批号</label>
+          <el-input v-model="form.batch_no" />
         </div>
         <div class="field">
-          <label>批号（期初）</label>
-          <el-input v-model="form.batch_no" placeholder="期初库存批号" />
-        </div>
-        <div class="field">
-          <label>有效期（期初）</label>
+          <label>有效期</label>
           <el-date-picker v-model="form.expiry_date" type="date" value-format="YYYY-MM-DD" style="width:100%" />
         </div>
-        <div class="field">
-          <label>期初数量</label>
-          <el-input-number v-model="form.init_qty" :min="0" style="width:100%" />
-        </div>
-
         <div class="field">
           <label>分类</label>
           <el-select v-model="form.category" filterable allow-create style="width:100%">
             <el-option v-for="v in options['分类']" :key="v" :value="v" />
           </el-select>
         </div>
+
         <div class="field">
           <label>储存条件</label>
-          <el-select v-model="form.storage_condition" filterable allow-create style="width:100%">
-            <el-option v-for="v in options['储存条件']" :key="v" :value="v" />
-          </el-select>
+          <div class="input-with-add">
+            <el-select v-model="form.storage_condition" filterable allow-create style="width:100%">
+              <el-option v-for="v in options['储存条件']" :key="v" :value="v" />
+            </el-select>
+            <el-button size="small" class="add-btn" @click="addOption('储存条件')">新增</el-button>
+          </div>
         </div>
         <div class="field">
           <label>单位</label>
-          <el-input v-model="form.unit" />
+          <div class="input-with-add">
+            <el-input v-model="form.unit" />
+            <el-button size="small" class="add-btn" @click="ElMessage.info('可直接输入新单位')">新增</el-button>
+          </div>
         </div>
         <div class="field">
           <label>采购单价</label>
@@ -227,9 +247,13 @@ const shown = computed(() => rows.value);
 
 <style scoped>
 .sub-title { font-size: 13px; color: #5d7f6a; margin: -6px 0 14px; }
-.form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 14px; margin-bottom: 14px; }
+.form-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px 12px; margin-bottom: 14px; }
 .field label { display: block; font-size: 12px; color: #3f6b52; margin-bottom: 4px; }
 .field .req { color: #c0392b; }
 .form-bottom { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e2efe7; padding-top: 12px; }
 .btn-group { display: flex; gap: 8px; }
+.input-with-add { display: flex; gap: 6px; align-items: center; }
+.input-with-add .el-select { flex: 1; }
+.add-btn { flex-shrink: 0; background: #fff; border: 1px solid #c0c4cc; color: #333; }
+.add-btn:hover { background: #f5f7fa; border-color: #909399; color: #333; }
 </style>
