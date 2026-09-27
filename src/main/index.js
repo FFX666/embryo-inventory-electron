@@ -154,7 +154,7 @@ function registerIpc() {
 
   // 报表导出（弹保存对话框后写文件）
   ipcMain.handle("export:workbook", async (e, payload) => {
-    const { sheetData, defaultName } = payload;
+    const { sheetData, defaultName, sheets } = payload;
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: "导出报表",
       defaultPath: defaultName || "报表.xlsx",
@@ -162,7 +162,9 @@ function registerIpc() {
     });
     if (canceled || !filePath) return { ok: false, msg: "已取消" };
     try {
-      require("./exporter").writeWorkbook(filePath, sheetData);
+      const exp = require("./exporter");
+      if (sheets && sheets.length) exp.writeMultiSheetWorkbook(filePath, sheets);
+      else exp.writeWorkbook(filePath, sheetData);
       return { ok: true, path: filePath };
     } catch (err) {
       return { ok: false, msg: "导出失败：" + err.message };

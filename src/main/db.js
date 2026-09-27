@@ -55,6 +55,7 @@ function createTables() {
       name TEXT NOT NULL,
       spec TEXT DEFAULT '',
       manufacturer TEXT DEFAULT '',
+      brand TEXT DEFAULT '',
       category TEXT DEFAULT '',
       storage_condition TEXT DEFAULT '',
       unit TEXT DEFAULT '瓶',
@@ -133,6 +134,11 @@ function createTables() {
       sort_no INTEGER DEFAULT 0
     );
   `);
+  // 老库迁移：materials 表补 brand 列
+  const cols = db.prepare("PRAGMA table_info(materials)").all().map((c) => c.name);
+  if (!cols.includes("brand")) {
+    db.prepare("ALTER TABLE materials ADD COLUMN brand TEXT DEFAULT ''").run();
+  }
 }
 
 /** 当前时间（本地） */
@@ -363,18 +369,18 @@ function listMaterials(onlyEnabled) {
 
 function saveMaterial(user, payload) {
   if (!canWrite(user)) return { ok: false, msg: "无权限：当前账号为只读" };
-  const { id, code, name, spec, manufacturer, category, storage_condition, unit, purchase_price, warning_qty, shelf_no, sort_no } = payload;
+  const { id, code, name, spec, manufacturer, brand, category, storage_condition, unit, purchase_price, warning_qty, shelf_no, sort_no } = payload;
   if (!name) return { ok: false, msg: "耗材名称必填" };
   if (id) {
     db.prepare(
-      `UPDATE materials SET code=?, name=?, spec=?, manufacturer=?, category=?, storage_condition=?, unit=?, purchase_price=?, warning_qty=?, shelf_no=?, sort_no=? WHERE id=?`
-    ).run(code || "", name, spec || "", manufacturer || "", category || "", storage_condition || "", unit || "瓶",
+      `UPDATE materials SET code=?, name=?, spec=?, manufacturer=?, brand=?, category=?, storage_condition=?, unit=?, purchase_price=?, warning_qty=?, shelf_no=?, sort_no=? WHERE id=?`
+    ).run(code || "", name, spec || "", manufacturer || "", brand || "", category || "", storage_condition || "", unit || "瓶",
       Number(purchase_price) || 0, Number(warning_qty) || 0, shelf_no || "", Number(sort_no) || 0, id);
     log(user, "基础档案", "修改", `Material ${id}`, name);
   } else {
     const r = db.prepare(
-      `INSERT INTO materials (code, name, spec, manufacturer, category, storage_condition, unit, purchase_price, warning_qty, shelf_no, sort_no, enabled) VALUES (?,?,?,?,?,?,?,?,?,?,?,1)`
-    ).run(code || "", name, spec || "", manufacturer || "", category || "", storage_condition || "", unit || "瓶",
+      `INSERT INTO materials (code, name, spec, manufacturer, brand, category, storage_condition, unit, purchase_price, warning_qty, shelf_no, sort_no, enabled) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1)`
+    ).run(code || "", name, spec || "", manufacturer || "", brand || "", category || "", storage_condition || "", unit || "瓶",
       Number(purchase_price) || 0, Number(warning_qty) || 0, shelf_no || "", Number(sort_no) || 0);
     log(user, "基础档案", "新增", `Material ${r.lastInsertRowid}`, name);
   }

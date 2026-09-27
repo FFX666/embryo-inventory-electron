@@ -26,6 +26,19 @@ function writeWorkbook(filePath, sheetData) {
   fs.writeFileSync(filePath, buf);
 }
 
+/** 写一个多 sheet 工作簿到文件（sheets: [{sheetName, columns, rows}]） */
+function writeMultiSheetWorkbook(filePath, sheets) {
+  const wb = XLSX.utils.book_new();
+  for (const s of sheets) {
+    const aoa = [s.columns.map((c) => c.title)];
+    for (const row of s.rows) aoa.push(s.columns.map((c) => row[c.key] ?? ""));
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = s.columns.map((c) => ({ wch: c.width || 16 }));
+    XLSX.utils.book_append_sheet(wb, ws, (s.sheetName || "Sheet").slice(0, 31));
+  }
+  fs.writeFileSync(filePath, XLSX.write(wb, { type: "buffer", bookType: "xlsx" }));
+}
+
 /** 打包多个报表为一个 zip 文件 */
 function writeZip(filePath, files) {
   const zip = new JSZip();
@@ -40,4 +53,4 @@ function writeZip(filePath, files) {
   });
 }
 
-module.exports = { buildSheetBuffer, writeWorkbook, writeZip };
+module.exports = { buildSheetBuffer, writeWorkbook, writeMultiSheetWorkbook, writeZip };
