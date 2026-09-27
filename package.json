@@ -1,6 +1,6 @@
 {
   "name": "embryo-inventory-electron",
-  "version": "1.0.4",
+  "version": "3.0",
   "description": "胚胎实验室库存管理系统（Electron + Vue3 + Element Plus + SQLite3）",
   "main": "src/main/index.js",
   "author": "Doubao Replica",
@@ -30,7 +30,7 @@
   },
   "build": {
     "appId": "com.doubao.embryoinventory",
-    "productName": "胚胎实验室库存管理",
+    "productName": "embryo-inventory",
     "directories": {
       "output": "dist"
     },
@@ -50,7 +50,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "胚胎实验室库存管理"
+      "shortcutName": "embryo-inventory"
     },
     "portable": {
       "artifactName": "${productName}-portable-${version}.exe",
