@@ -30,6 +30,9 @@ jobs:
       - name: 编译 Windows EXE（electron-builder）
         run: npm run dist -- --publish never
 
+      - name: 列出构建产物
+        run: ls -lh dist/*.exe
+
       - name: 上传 EXE 产物
         uses: actions/upload-artifact@v4
         with:
