@@ -50,6 +50,36 @@ async function doVoid(row) {
   if (r.ok) { ElMessage.success("已作废"); load(); } else ElMessage.error(r.msg);
 }
 
+async function exportExcel() {
+  const columns = [
+    { key: "date", title: "日期", width: 12 },
+    { key: "material_name", title: "耗材名称", width: 24 },
+    { key: "batch_no", title: "批号", width: 14 },
+    { key: "expiry_date", title: "有效期", width: 12 },
+    { key: "qty", title: "数量", width: 8 },
+    { key: "unit", title: "单位", width: 8 },
+    { key: "supplier", title: "供应商", width: 18 },
+    { key: "handler", title: "经手人", width: 12 },
+    { key: "status", title: "状态", width: 10 },
+  ];
+  const r = await window.api.export.workbook({ columns, rows: shown.value, sheetName: "入库记录" }, "入库记录.xlsx");
+  if (r.ok) ElMessage.success("已导出到：" + r.path);
+  else if (r.msg !== "已取消") ElMessage.error(r.msg);
+}
+
+async function importExcel() {
+  const r = await window.api.inbound.importExcel();
+  if (r.ok) {
+    ElMessage.success(`成功导入 ${r.imported} 条入库记录`);
+    if (r.errors && r.errors.length) {
+      ElMessage.warning(`有 ${r.errors.length} 行失败：\n` + r.errors.slice(0, 5).join("\n"));
+    }
+    load();
+  } else {
+    ElMessage.error(r.msg);
+  }
+}
+
 const shown = computed(() => rows.value);
 </script>
 
@@ -59,6 +89,8 @@ const shown = computed(() => rows.value);
       <div class="card-title">入库管理</div>
       <div class="toolbar">
         <el-button v-if="!isViewer" class="green-btn" type="primary" @click="openAdd">新增入库</el-button>
+        <el-button v-if="!isViewer" @click="importExcel">批量导入Excel</el-button>
+        <el-button @click="exportExcel">导出Excel</el-button>
       </div>
       <div class="table-wrap">
         <el-table :data="shown" size="small" height="520">
