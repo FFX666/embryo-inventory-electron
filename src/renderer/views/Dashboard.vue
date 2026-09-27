@@ -6,9 +6,8 @@ const router = useRouter();
 const stats = ref({ materials: 0, low: 0, near: 0, expired: 0, todayOps: 0 });
 const rows = ref([]);
 
-// 筛选条件（点“筛选”才应用）
-const f = ref({ name: "", category: "", expiry: "", unit: "", shelf: "", status: "" });
-const applied = ref({ name: "", category: "", expiry: "", unit: "", shelf: "", status: "" });
+// 筛选条件（选完实时生效）
+const f = ref({ name: "all", category: "all", expiry: "all", unit: "all", shelf: "all", status: "all" });
 
 onMounted(load);
 
@@ -24,7 +23,7 @@ const unitOptions = computed(() => [...new Set(rows.value.map((r) => r.unit).fil
 const shelfOptions = computed(() => [...new Set(rows.value.map((r) => r.shelf_no).filter(Boolean))]);
 const statusOptions = ["正常", "低库存", "临期", "已过期", "无库存"];
 const expiryOptions = [
-  { label: "全部", value: "" },
+  { label: "全部", value: "all" },
   { label: "已过期", value: "expired" },
   { label: "30天内到期", value: "near30" },
   { label: "90天内到期", value: "near90" },
@@ -60,19 +59,17 @@ function statusTagType(s) {
 
 const shown = computed(() => rows.value.filter((r) => {
   const s = statusOf(r);
-  if (applied.value.name && r.name !== applied.value.name) return false;
-  if (applied.value.category && r.category !== applied.value.category) return false;
-  if (applied.value.unit && r.unit !== applied.value.unit) return false;
-  if (applied.value.shelf && r.shelf_no !== applied.value.shelf) return false;
-  if (applied.value.status && s !== applied.value.status) return false;
-  if (applied.value.expiry && expiryBucket(r) !== applied.value.expiry) return false;
+  if (f.value.name !== "all" && r.name !== f.value.name) return false;
+  if (f.value.category !== "all" && r.category !== f.value.category) return false;
+  if (f.value.unit !== "all" && r.unit !== f.value.unit) return false;
+  if (f.value.shelf !== "all" && r.shelf_no !== f.value.shelf) return false;
+  if (f.value.status !== "all" && s !== f.value.status) return false;
+  if (f.value.expiry !== "all" && expiryBucket(r) !== f.value.expiry) return false;
   return true;
 }));
 
-function applyFilter() { applied.value = { ...f.value }; }
 function resetFilter() {
-  f.value = { name: "", category: "", expiry: "", unit: "", shelf: "", status: "" };
-  applied.value = { name: "", category: "", expiry: "", unit: "", shelf: "", status: "" };
+  f.value = { name: "all", category: "all", expiry: "all", unit: "all", shelf: "all", status: "all" };
 }
 
 // 统计卡点击跳转
@@ -81,8 +78,7 @@ function goDashboard(kind) {
   if (kind === "todayOps") { router.push("/logs"); return; }
   // 低库存/临期/已过期：在本表按状态预筛选
   const map = { low: "低库存", near: "临期", expired: "已过期" };
-  f.value.status = map[kind] || "";
-  applyFilter();
+  f.value.status = map[kind] || "all";
 }
 </script>
 
@@ -104,14 +100,14 @@ function goDashboard(kind) {
         <div class="filter-col">
           <label class="filter-label">耗材名称</label>
           <el-select v-model="f.name" style="width:100%">
-            <el-option label="全部" value="" />
+            <el-option label="全部" value="all" />
             <el-option v-for="n in nameOptions" :key="n" :label="n" :value="n" />
           </el-select>
         </div>
         <div class="filter-col">
           <label class="filter-label">分类</label>
           <el-select v-model="f.category" style="width:100%">
-            <el-option label="全部" value="" />
+            <el-option label="全部" value="all" />
             <el-option v-for="c in categoryOptions" :key="c" :label="c" :value="c" />
           </el-select>
         </div>
@@ -124,26 +120,25 @@ function goDashboard(kind) {
         <div class="filter-col">
           <label class="filter-label">单位</label>
           <el-select v-model="f.unit" style="width:100%">
-            <el-option label="全部" value="" />
+            <el-option label="全部" value="all" />
             <el-option v-for="u in unitOptions" :key="u" :label="u" :value="u" />
           </el-select>
         </div>
         <div class="filter-col">
           <label class="filter-label">货架号</label>
           <el-select v-model="f.shelf" style="width:100%">
-            <el-option label="全部" value="" />
+            <el-option label="全部" value="all" />
             <el-option v-for="s in shelfOptions" :key="s" :label="s" :value="s" />
           </el-select>
         </div>
         <div class="filter-col">
           <label class="filter-label">状态</label>
           <el-select v-model="f.status" style="width:100%">
-            <el-option label="全部" value="" />
+            <el-option label="全部" value="all" />
             <el-option v-for="s in statusOptions" :key="s" :label="s" :value="s" />
           </el-select>
         </div>
         <div class="filter-actions">
-          <el-button class="green-btn" type="primary" @click="applyFilter">筛选</el-button>
           <el-button @click="resetFilter">重置</el-button>
         </div>
       </div>
