@@ -99,33 +99,53 @@ function goDashboard(kind) {
     <div class="card">
       <div class="card-title">实时库存总表</div>
 
-      <!-- 列下拉筛选：每列一个下拉，全部/各选项；末尾筛选+重置 -->
+      <!-- 列下拉筛选：每列上方 label，下面下拉框默认"全部"；末尾筛选+重置 -->
       <div class="filter-row">
-        <el-select v-model="f.name" placeholder="耗材名称" clearable style="width:150px">
-          <el-option label="全部" value="" />
-          <el-option v-for="n in nameOptions" :key="n" :label="n" :value="n" />
-        </el-select>
-        <el-select v-model="f.category" placeholder="分类" clearable style="width:120px">
-          <el-option label="全部" value="" />
-          <el-option v-for="c in categoryOptions" :key="c" :label="c" :value="c" />
-        </el-select>
-        <el-select v-model="f.expiry" placeholder="有效期" clearable style="width:130px">
-          <el-option v-for="o in expiryOptions" :key="o.value" :label="o.label" :value="o.value" />
-        </el-select>
-        <el-select v-model="f.unit" placeholder="单位" clearable style="width:100px">
-          <el-option label="全部" value="" />
-          <el-option v-for="u in unitOptions" :key="u" :label="u" :value="u" />
-        </el-select>
-        <el-select v-model="f.shelf" placeholder="货架号" clearable style="width:110px">
-          <el-option label="全部" value="" />
-          <el-option v-for="s in shelfOptions" :key="s" :label="s" :value="s" />
-        </el-select>
-        <el-select v-model="f.status" placeholder="状态" clearable style="width:110px">
-          <el-option label="全部" value="" />
-          <el-option v-for="s in statusOptions" :key="s" :label="s" :value="s" />
-        </el-select>
-        <el-button class="green-btn" type="primary" @click="applyFilter">筛选</el-button>
-        <el-button @click="resetFilter">重置</el-button>
+        <div class="filter-col">
+          <label class="filter-label">耗材名称</label>
+          <el-select v-model="f.name" style="width:100%">
+            <el-option label="全部" value="" />
+            <el-option v-for="n in nameOptions" :key="n" :label="n" :value="n" />
+          </el-select>
+        </div>
+        <div class="filter-col">
+          <label class="filter-label">分类</label>
+          <el-select v-model="f.category" style="width:100%">
+            <el-option label="全部" value="" />
+            <el-option v-for="c in categoryOptions" :key="c" :label="c" :value="c" />
+          </el-select>
+        </div>
+        <div class="filter-col">
+          <label class="filter-label">有效期</label>
+          <el-select v-model="f.expiry" style="width:100%">
+            <el-option v-for="o in expiryOptions" :key="o.value" :label="o.label" :value="o.value" />
+          </el-select>
+        </div>
+        <div class="filter-col">
+          <label class="filter-label">单位</label>
+          <el-select v-model="f.unit" style="width:100%">
+            <el-option label="全部" value="" />
+            <el-option v-for="u in unitOptions" :key="u" :label="u" :value="u" />
+          </el-select>
+        </div>
+        <div class="filter-col">
+          <label class="filter-label">货架号</label>
+          <el-select v-model="f.shelf" style="width:100%">
+            <el-option label="全部" value="" />
+            <el-option v-for="s in shelfOptions" :key="s" :label="s" :value="s" />
+          </el-select>
+        </div>
+        <div class="filter-col">
+          <label class="filter-label">状态</label>
+          <el-select v-model="f.status" style="width:100%">
+            <el-option label="全部" value="" />
+            <el-option v-for="s in statusOptions" :key="s" :label="s" :value="s" />
+          </el-select>
+        </div>
+        <div class="filter-actions">
+          <el-button class="green-btn" type="primary" @click="applyFilter">筛选</el-button>
+          <el-button @click="resetFilter">重置</el-button>
+        </div>
       </div>
 
       <div class="table-wrap">
@@ -151,5 +171,8 @@ function goDashboard(kind) {
 <style scoped>
 .clickable { cursor: pointer; transition: transform .1s, box-shadow .1s; }
 .clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(20,83,45,.12); }
-.filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
+.filter-col { display: flex; flex-direction: column; flex: 1; min-width: 120px; }
+.filter-label { font-size: 12px; color: #5d7f6a; margin-bottom: 4px; }
+.filter-actions { display: flex; gap: 8px; padding-bottom: 2px; }
 </style>
