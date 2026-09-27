@@ -1,6 +1,6 @@
 {
   "name": "embryo-inventory-electron",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "胚胎实验室库存管理系统（Electron + Vue3 + Element Plus + SQLite3）",
   "main": "src/main/index.js",
   "author": "Doubao Replica",
@@ -9,7 +9,7 @@
     "dev": "vite",
     "build:vite": "vite build",
     "start": "electron .",
-    "dist": "electron-builder --win nsis",
+    "dist": "electron-builder --win",
     "dist:dir": "electron-builder --dir"
   },
   "dependencies": {
