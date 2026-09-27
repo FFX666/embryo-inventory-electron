@@ -56,39 +56,44 @@ async function submit() {
 <template>
   <div class="login-page">
     <div class="login-card">
-      <div class="login-title">胚胎实验室库存管理</div>
-      <div class="login-sub">试剂耗材出入库 · 权限分级 · 全程留痕</div>
-      <el-form @submit.prevent="submit">
-        <el-form-item>
-          <el-input v-model="username" placeholder="工号" size="large" @input="onUsernameInput" autofocus />
-        </el-form-item>
+      <div class="login-title">账号登录</div>
+      <div class="login-sub">请输入工号，系统将自动显示对应姓名</div>
 
-        <!-- 姓名占位区：上下两段空白，找到工号时名字居中显示 -->
-        <div class="name-zone">
-          <div v-if="nameStatus === 'found'" class="name-found">{{ displayName }}</div>
-          <div v-else-if="nameStatus === 'notfound'" class="name-notfound">未找到该工号</div>
-        </div>
+      <div class="form-item">
+        <label class="field-label">工号</label>
+        <el-input v-model="username" size="large" @input="onUsernameInput" autofocus />
+      </div>
 
-        <el-form-item>
-          <el-input v-model="password" placeholder="密码" type="password" size="large" show-password @keyup.enter="submit" />
-        </el-form-item>
-        <el-button class="green-btn" type="primary" size="large" style="width:100%" :loading="loading" @click="submit">
-          登 录
-        </el-button>
-      </el-form>
+      <!-- 姓名显示区：浅绿底矩形框 -->
+      <div class="name-box" :class="{ empty: nameStatus === 'unknown' }">
+        <span v-if="nameStatus === 'found'" class="name-found">{{ displayName }}</span>
+        <span v-else-if="nameStatus === 'notfound'" class="name-notfound">未找到该工号</span>
+      </div>
+
+      <div class="form-item">
+        <label class="field-label">密码</label>
+        <el-input v-model="password" type="password" size="large" show-password @keyup.enter="submit" />
+      </div>
+
+      <el-button class="green-btn" type="primary" size="large" style="width:100%;margin-top:8px" :loading="loading" @click="submit">
+        登 录
+      </el-button>
       <div class="login-tip">演示账号：2002 管理员 · 2005 只读查看员（密码 123456）</div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.login-page { height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #14532d 0%, #1a7a48 55%, #4d8f66 100%); }
-.login-card { width: 380px; background: #fff; border-radius: 14px; padding: 38px 36px 26px; box-shadow: 0 10px 40px rgba(0,0,0,.18); }
-.login-title { font-size: 22px; font-weight: 700; color: #14532d; text-align: center; }
-.login-sub { font-size: 13px; color: #5d7f6a; text-align: center; margin: 6px 0 10px; }
-/* 姓名显示区：固定高度，上下两段空白把名字夹在中间 */
-.name-zone { height: 80px; display: flex; align-items: center; justify-content: center; margin: 8px 0 8px; border-top: 1px dashed #d4e6db; border-bottom: 1px dashed #d4e6db; }
-.name-found { font-size: 18px; color: #1a7a48; font-weight: 600; letter-spacing: 2px; }
-.name-notfound { font-size: 14px; color: #b91c1c; }
+.login-page { height: 100%; display: flex; align-items: center; justify-content: center; background: #f0f7f2; }
+.login-card { width: 420px; background: #fff; border: 1px solid #cfe3d4; border-radius: 8px; padding: 32px 32px 24px; }
+.login-title { font-size: 22px; font-weight: 700; color: #14532d; text-align: left; }
+.login-sub { font-size: 13px; color: #5d7f6a; text-align: left; margin: 4px 0 22px; }
+.form-item { margin-bottom: 14px; }
+.field-label { display: block; font-size: 13px; color: #333; margin-bottom: 6px; }
+/* 姓名显示框：浅绿底矩形 */
+.name-box { min-height: 44px; display: flex; align-items: center; padding: 0 12px; background: #e8f5ee; border: 1px solid #cfe3d4; border-radius: 4px; margin-bottom: 14px; font-size: 15px; }
+.name-box.empty { background: #f4f9f6; }
+.name-found { color: #1f2d27; font-weight: 500; }
+.name-notfound { color: #c0392b; }
 .login-tip { margin-top: 14px; font-size: 12px; color: #8aa698; text-align: center; }
 </style>
