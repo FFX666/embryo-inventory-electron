@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { ElMessage, ElMessageBox } from "element-plus";
 
 const route = useRoute();
 const router = useRouter();
@@ -40,8 +41,17 @@ const menus = computed(() => {
 });
 
 async function logout() {
-  await window.api.auth.logout();
-  router.push("/login");
+  try {
+    await ElMessageBox.confirm("确定要退出登录吗？", "退出确认", {
+      type: "warning",
+      confirmButtonText: "退出登录",
+      cancelButtonText: "取消",
+      confirmButtonClass: "el-button--danger",
+    });
+  } catch (_) { return; }
+  try { await window.api.auth.logout(); } catch (e) { /* 忽略 */ }
+  user.value = null;
+  router.replace("/login");
 }
 </script>
 
@@ -72,9 +82,9 @@ async function logout() {
       <el-header class="topbar">
         <div class="page-title">{{ menus.find((m) => m.path === route.path)?.title || "" }}</div>
         <div class="user-box">
-          <span class="user-info">{{ user.username }}·{{ user.display_name }}·{{ user.role_name }}</span>
-          <el-button v-if="user.role === 'admin'" size="small" text @click="router.push('/settings')">系统设置</el-button>
-          <el-button size="small" text @click="logout">退出登录</el-button>
+          <span class="user-info">{{ user.display_name }}（{{ user.role_name }}）</span>
+          <el-button v-if="user.role === 'admin'" size="small" @click="router.push('/settings')">系统设置</el-button>
+          <el-button size="small" type="danger" @click="logout">退出登录</el-button>
         </div>
       </el-header>
       <el-main class="content">
