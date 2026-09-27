@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
+import { ElMessage } from "element-plus";
 
 const filter = ref({ name: "", category: "", handler: "", dateFrom: "", dateTo: "" });
 const result = ref({ inbound: [], outbound: [] });
@@ -20,6 +21,43 @@ function reset() {
   filter.value = { name: "", category: "", handler: "", dateFrom: "", dateTo: "" };
   search();
 }
+
+async function exportExcel() {
+  const sheets = [
+    {
+      sheetName: "入库记录",
+      columns: [
+        { key: "date", title: "日期", width: 12 },
+        { key: "material_name", title: "耗材名称", width: 22 },
+        { key: "batch_no", title: "批号", width: 14 },
+        { key: "expiry_date", title: "有效期", width: 12 },
+        { key: "qty", title: "数量", width: 8 },
+        { key: "unit", title: "单位", width: 8 },
+        { key: "supplier", title: "供应商", width: 16 },
+        { key: "handler", title: "经手人", width: 10 },
+      ],
+      rows: result.value.inbound || [],
+    },
+    {
+      sheetName: "出库记录",
+      columns: [
+        { key: "date", title: "日期", width: 12 },
+        { key: "material_name", title: "耗材名称", width: 22 },
+        { key: "batch_no", title: "批号", width: 14 },
+        { key: "qty", title: "数量", width: 8 },
+        { key: "unit", title: "单位", width: 8 },
+        { key: "handler", title: "经手人", width: 10 },
+        { key: "checker", title: "核对人", width: 10 },
+        { key: "reason", title: "领用原因", width: 16 },
+      ],
+      rows: result.value.outbound || [],
+    },
+  ];
+  // 用 zip 形式一次导出两个 sheet 到一个 xlsx（通过 export:workbook 多次调用不合适，这里直接生成多 sheet 工作簿）
+  const r = await window.api.export.workbook({ sheetName: "查询结果", columns: [], rows: [], sheets }, "查询结果.xlsx");
+  if (r.ok) ElMessage.success("已导出：" + r.path);
+  else if (r.msg !== "已取消") ElMessage.error(r.msg);
+}
 </script>
 
 <template>
@@ -36,6 +74,7 @@ function reset() {
         <el-date-picker v-model="filter.dateTo" type="date" value-format="YYYY-MM-DD" placeholder="截止日期" style="width:140px" />
         <el-button class="green-btn" type="primary" @click="search">查询</el-button>
         <el-button @click="reset">重置</el-button>
+        <el-button type="success" plain @click="exportExcel">导出Excel</el-button>
       </div>
     </div>
 

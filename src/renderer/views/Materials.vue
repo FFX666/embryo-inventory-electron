@@ -28,7 +28,7 @@ async function load() {
 
 function openAdd() {
   editingId.value = null;
-  form.value = { name: "", code: "", spec: "", manufacturer: "", category: "", storage_condition: "", unit: "瓶", purchase_price: 0, warning_qty: 0, shelf_no: "", sort_no: 0 };
+  form.value = { name: "", code: "", spec: "", manufacturer: "", brand: "", category: "", storage_condition: "", unit: "瓶", purchase_price: 0, warning_qty: 0, shelf_no: "", sort_no: 0 };
   dialog.value = true;
 }
 
@@ -88,6 +88,7 @@ const shown = computed(() => rows.value);
           <el-table-column prop="name" label="名称" min-width="160" />
           <el-table-column prop="spec" label="规格型号" width="110" />
           <el-table-column prop="manufacturer" label="厂家" width="120" />
+          <el-table-column prop="brand" label="品牌" width="100" />
           <el-table-column prop="category" label="分类" width="90" />
           <el-table-column prop="storage_condition" label="储存条件" width="90" />
           <el-table-column prop="unit" label="单位" width="70" />
@@ -116,6 +117,7 @@ const shown = computed(() => rows.value);
           <el-col :span="12"><el-form-item label="名称" prop="name"><el-input v-model="form.name" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="规格型号"><el-input v-model="form.spec" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="生产厂家"><el-input v-model="form.manufacturer" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="品牌"><el-input v-model="form.brand" /></el-form-item></el-col>
           <el-col :span="12">
             <el-form-item label="分类">
               <el-select v-model="form.category" filterable allow-create clearable style="width:100%">
