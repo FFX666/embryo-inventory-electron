@@ -83,6 +83,21 @@ function onEdit(row) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function onView(row) {
+  ElMessageBox.alert(
+    `<div style="line-height:2;font-size:13px">
+      <b>${row.name}</b><br/>
+      编号：${row.code || "-"}<br/>
+      规格：${row.spec || "-"}　厂家：${row.manufacturer || "-"}<br/>
+      分类：${row.category || "-"}　单位：${row.unit || "-"}<br/>
+      货架：${row.shelf_no || "-"}　预警：${row.warning_qty}<br/>
+      单价：${row.purchase_price}　状态：${row.enabled ? "启用" : "停用"}
+    </div>`,
+    "耗材详情",
+    { dangerouslyUseHTMLString: true, confirmButtonText: "关闭" }
+  );
+}
+
 async function onToggle(row) {
   await ElMessageBox.confirm(`确定要${row.enabled ? "停用" : "启用"}「${row.name}」吗？`, "确认", { type: "warning" });
   const r = await window.api.materials.toggle(row.id);
@@ -223,20 +238,19 @@ const shown = computed(() => rows.value);
           <el-table-column prop="name" label="耗材名称" min-width="180" />
           <el-table-column prop="spec" label="规格型号" width="110" />
           <el-table-column prop="manufacturer" label="生产厂家" width="120" />
-          <el-table-column prop="brand" label="品牌" width="100" />
           <el-table-column prop="category" label="分类" width="100" />
           <el-table-column prop="unit" label="单位" width="70" />
           <el-table-column prop="purchase_price" label="采购单价" width="90" />
           <el-table-column prop="warning_qty" label="预警数量" width="90" />
-          <el-table-column prop="stock_qty" label="当前库存" width="90" />
           <el-table-column prop="shelf_no" label="货架号" width="90" />
           <el-table-column label="操作" width="220" fixed="right">
             <template #default="{ row }">
-              <el-button size="small" text @click="openBarcode(row)">条码</el-button>
+              <el-button size="small" text @click="onView(row)">查看</el-button>
               <el-button size="small" text type="primary" @click="onEdit(row)">修改</el-button>
               <el-button v-if="!isViewer" size="small" text :type="row.enabled ? 'danger' : 'success'" @click="onToggle(row)">
                 {{ row.enabled ? "停用" : "启用" }}
               </el-button>
+              <el-button size="small" text @click="openBarcode(row)">条码</el-button>
             </template>
           </el-table-column>
         </el-table>
